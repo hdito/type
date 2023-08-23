@@ -1,23 +1,42 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { enableMapSet, produce } from "immer";
+import { useEffect, useState } from "react";
+import { useImmer } from "use-immer";
+import { Line } from "./line";
+import { Stats } from "./stats";
+
+enableMapSet();
 
 export default function Home() {
-  const targetString = "home home home home home";
-  const renderBlocks = targetString.split("");
-  const [userInput, setUserInput] = useState("");
-  const renderUserInput = userInput.split("");
-  const userErrors = useRef(new Set<number>());
-  const [userPosition, setUserPosition] = useState<number | null>(null);
-  const [mode, setMode] = useState<"type" | "result">("type");
-  const [countOfErrors, setCountOfErrors] = useState(0);
+  const targetText = "home\nhome home";
+  const targetStrings = targetText.split("\n");
+  const countOfLines = targetStrings.length;
 
-  function reset() {
-    setUserInput("");
-    setUserPosition(null);
-    setMode("type");
+  const [userInputs, setUserInputs] = useImmer(
+    new Array(countOfLines).fill(""),
+  );
+  const [userPositions, setUserPositions] = useImmer(
+    new Array(countOfLines).fill(null),
+  );
+  const [countOfErrors, setCountOfErrors] = useState(0);
+  const [currentLine, setCurrentLine] = useState(0);
+  const [userErrors, setUserErrors] = useImmer(
+    new Array(countOfLines).fill(new Set<number>()),
+  );
+
+  const [totalKeypresses, setTotalKeypresses] = useState(0);
+
+  const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
+  const [stopTimestamp, setStopTimestamp] = useState<number | null>(null);
+
+  const reset = () => {
+    setUserInputs(new Array(countOfLines).fill(""));
+    setUserPositions(new Array(countOfLines).fill(null));
     setCountOfErrors(0);
-    userErrors.current.clear();
-  }
+    setCurrentLine(0);
+    setStartTimestamp(null);
+    setStopTimestamp(null);
+  };
 
   useEffect(() => {
     function handleKeys(event: KeyboardEvent): void {
@@ -29,6 +48,10 @@ export default function Home() {
         )
       )
         return;
+
+      if (startTimestamp === null) {
+        setStartTimestamp(Date.now());
+      }
 
       switch (event.key) {
         case "Backspace":
@@ -42,72 +65,98 @@ export default function Home() {
       }
 
       function handleBackspace() {
-        if (userPosition !== null && userErrors.current.has(userPosition)) {
-          userErrors.current.delete(userPosition);
+        if (
+          userPositions[currentLine] !== null &&
+          userErrors[currentLine].has(userPositions[currentLine])
+        ) {
+          setUserErrors((errors) => {
+            errors[currentLine].delete(userPositions[currentLine]);
+          });
         }
         const currentPosition =
-          userPosition === 0 || userPosition === null ? null : userPosition - 1;
-        const currentUserInput = userInput.slice(0, -1);
-        setUserPosition(currentPosition);
-        setUserInput(currentUserInput);
+          userPositions[currentLine] === 0 ||
+          userPositions[currentLine] === null
+            ? null
+            : userPositions[currentLine] - 1;
+        const currentUserInput = userInputs[currentLine].slice(0, -1);
+
+        setUserPositions((positions) => {
+          positions[currentLine] = currentPosition;
+        });
+        setUserInputs((userInputs) => {
+          userInputs[currentLine] = currentUserInput;
+        });
       }
 
       function handleChar() {
-        const currentPosition = userPosition === null ? 0 : userPosition + 1;
-        const currentUserInput = userInput + event.key;
+        setTotalKeypresses((prev) => prev + 1);
+        const currentPosition =
+          userPositions[currentLine] === null
+            ? 0
+            : userPositions[currentLine] + 1;
+        const currentUserInput = userInputs[currentLine] + event.key;
         if (
-          targetString.charAt(currentPosition) !==
+          targetStrings[currentLine].charAt(currentPosition) !==
           currentUserInput.charAt(currentPosition)
         ) {
           setCountOfErrors((prev) => prev + 1);
-          userErrors.current.add(currentPosition);
+          setUserErrors((userErrors) => {
+            userErrors[currentLine].add(currentPosition);
+          });
         }
-        setUserPosition(currentPosition);
-        setUserInput(currentUserInput);
+        setUserPositions((prevPositions) => {
+          prevPositions[currentLine] = currentPosition;
+        });
+        setUserInputs((prevInputs) => {
+          prevInputs[currentLine] = currentUserInput;
+        });
       }
 
       function handleEnter() {
-        setMode("result");
+        if (currentLine === countOfLines - 1) {
+          setStopTimestamp(Date.now());
+        }
+        setCurrentLine((prev) => prev + 1);
       }
     }
 
-    if (mode === "type") {
+    if (currentLine < countOfLines) {
       document.addEventListener("keydown", handleKeys);
     }
     return () => {
-      if (mode === "type") {
+      if (currentLine < countOfLines) {
         document.removeEventListener("keydown", handleKeys);
       }
     };
-  }, [userPosition, userInput, mode]);
+  }, [userPositions, userErrors, userInputs, currentLine]);
+
   return (
     <>
       <main className="p-4">
-        <div>
-          {renderBlocks.map((char, index) => (
-            <span key={index}>{char}</span>
-          ))}
-        </div>
-        <div>
-          {renderUserInput.map((char, index) => (
-            <span
-              className={
-                userErrors.current.has(index) ? "underline decoration-2" : ""
-              }
+        <div className="mb-4">
+          {targetStrings.map((targetString, index) => (
+            <Line
+              isEditable={currentLine === index}
+              targetString={targetString}
               key={index}
-            >
-              {char}
-            </span>
+              userInput={userInputs[index]}
+              userErrors={userErrors[index]}
+            />
           ))}
-          {mode === "type" ? <span>_</span> : null}
         </div>
-        {mode === "result" ? (
-          <>
-            <p>
-              <b>Errors:</b> <span>{countOfErrors}</span>
-            </p>
-            <button onClick={reset}>Reset</button>
-          </>
+        {currentLine === countOfLines ? (
+          <Stats
+            countOfErrors={countOfErrors}
+            onReset={reset}
+            start={startTimestamp!}
+            stop={stopTimestamp!}
+            targetText={targetStrings
+              .map((string) => string.split("\n"))
+              .flat()
+              .join(" ")}
+            totalKeypresses={totalKeypresses}
+            userInput={userInputs.join(" ")}
+          />
         ) : null}
       </main>
     </>
