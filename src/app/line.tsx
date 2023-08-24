@@ -16,15 +16,17 @@ export function Line({
 
   return (
     <>
-      <div>
+      <div className="flex h-6">
         {renderBlocks.map((char, index) => (
-          <span key={index}>{char}</span>
+          <span className="inline-block w-[9.6px] text-center" key={index}>
+            {char}
+          </span>
         ))}
       </div>
       <div className="flex h-6">
         {renderUserInput.map((char, index) => (
           <span
-            className={`inline-block h-6 w-[9.6px] ${
+            className={`inline-block w-[9.6px] text-center ${
               userErrors.has(index) ? "bg-black text-white" : ""
             }`}
             key={index}

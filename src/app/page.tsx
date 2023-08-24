@@ -1,5 +1,5 @@
 "use client";
-import { enableMapSet, produce } from "immer";
+import { enableMapSet } from "immer";
 import { useEffect, useState } from "react";
 import { useImmer } from "use-immer";
 import { Line } from "./line";
@@ -22,6 +22,13 @@ export default function Home() {
   const [currentLine, setCurrentLine] = useState(0);
   const [userErrors, setUserErrors] = useImmer(
     new Array(countOfLines).fill(new Set<number>()),
+  );
+
+  const [correctlyPressedKeys, setCorrectlyPressedKeys] = useImmer(
+    new Map<string, number>(),
+  );
+  const [incorrectlyPressedKeys, setIncorrectlyPressedKeys] = useImmer(
+    new Map<string, number>(),
   );
 
   const [totalKeypresses, setTotalKeypresses] = useState(0);
@@ -95,21 +102,40 @@ export default function Home() {
             ? 0
             : userPositions[currentLine] + 1;
         const currentUserInput = userInputs[currentLine] + event.key;
-        if (
-          targetStrings[currentLine].charAt(currentPosition) !==
-          currentUserInput.charAt(currentPosition)
-        ) {
+
+        const targetKey = targetStrings[currentLine].charAt(currentPosition);
+        const pressedKey = currentUserInput.charAt(currentPosition);
+
+        accountPressedKeys(targetKey, pressedKey);
+
+        if (targetKey !== pressedKey) {
           setCountOfErrors((prev) => prev + 1);
           setUserErrors((userErrors) => {
             userErrors[currentLine].add(currentPosition);
           });
         }
+
         setUserPositions((prevPositions) => {
           prevPositions[currentLine] = currentPosition;
         });
         setUserInputs((prevInputs) => {
           prevInputs[currentLine] = currentUserInput;
         });
+
+        function accountPressedKeys(targetKey: string, pressedKey: string) {
+          if (targetKey === "") {
+            return;
+          }
+          if (targetKey !== pressedKey) {
+            setIncorrectlyPressedKeys((prev) => {
+              prev.set(targetKey, (prev.get(targetKey) ?? 0) + 1);
+            });
+            return;
+          }
+          setCorrectlyPressedKeys((prev) => {
+            prev.set(targetKey, (prev.get(targetKey) ?? 0) + 1);
+          });
+        }
       }
 
       function handleEnter() {
@@ -128,7 +154,8 @@ export default function Home() {
         document.removeEventListener("keydown", handleKeys);
       }
     };
-  }, [userPositions, userErrors, userInputs, currentLine]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userInputs, currentLine]);
 
   return (
     <>
@@ -150,12 +177,11 @@ export default function Home() {
             onReset={reset}
             start={startTimestamp!}
             stop={stopTimestamp!}
-            targetText={targetStrings
-              .map((string) => string.split("\n"))
-              .flat()
-              .join(" ")}
+            targetText={targetText}
             totalKeypresses={totalKeypresses}
-            userInput={userInputs.join(" ")}
+            userInput={userInputs.join("\n")}
+            correctlyPressedKeys={correctlyPressedKeys}
+            incorrectlyPressedKeys={incorrectlyPressedKeys}
           />
         ) : null}
       </main>
