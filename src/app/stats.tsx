@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 type StatsProps = {
   start: number;
   stop: number;
@@ -30,6 +32,19 @@ export function Stats({
     correctlyPressedKeys,
     incorrectlyPressedKeys,
   );
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleNavigation);
+
+    function handleNavigation(event: KeyboardEvent): void {
+      if (event.key !== "r") {
+        return;
+      }
+      onReset();
+    }
+
+    return () => document.removeEventListener("keydown", handleNavigation);
+  }, []);
 
   function getAdjustedWPM(
     targetString: string,
@@ -145,7 +160,7 @@ export function Stats({
         className="self-start rounded-md bg-black px-1 py-0.5 text-white"
         onClick={onReset}
       >
-        Reset
+        Try again (r)
       </button>
     </div>
   );
