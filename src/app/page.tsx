@@ -8,7 +8,7 @@ import { Stats } from "./stats";
 enableMapSet();
 
 export default function Home() {
-  const targetText = "home\nhome home";
+  const targetText = "The quick brown fox jumps over the lazy dog.";
   const targetStrings = targetText.split("\n");
   const countOfLines = targetStrings.length;
 
@@ -156,13 +156,12 @@ export default function Home() {
         document.removeEventListener("keydown", handleKeys);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userInputs, currentLine]);
 
   return (
     <>
-      <main className="p-4">
-        <div className="mb-4">
+      <main className="flex min-w-[50ch] flex-col gap-4 p-4">
+        <div>
           {targetStrings.map((targetString, index) => (
             <Line
               isEditable={currentLine === index}
@@ -174,17 +173,20 @@ export default function Home() {
           ))}
         </div>
         {currentLine === countOfLines ? (
-          <Stats
-            countOfErrors={countOfErrors}
-            onReset={reset}
-            start={startTimestamp!}
-            stop={stopTimestamp!}
-            targetText={targetText}
-            totalKeypresses={totalKeypresses}
-            userInput={userInputs.join("\n")}
-            correctlyPressedKeys={correctlyPressedKeys}
-            incorrectlyPressedKeys={incorrectlyPressedKeys}
-          />
+          <>
+            <div className="h-0.5 max-w-[50ch] bg-black"></div>
+            <Stats
+              countOfErrors={countOfErrors}
+              onReset={reset}
+              start={startTimestamp!}
+              stop={stopTimestamp!}
+              targetText={targetText}
+              totalKeypresses={totalKeypresses}
+              userInput={userInputs.join("\n")}
+              correctlyPressedKeys={correctlyPressedKeys}
+              incorrectlyPressedKeys={incorrectlyPressedKeys}
+            />
+          </>
         ) : null}
       </main>
     </>
