@@ -1,6 +1,6 @@
 "use client";
 import { enableMapSet } from "immer";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useImmer } from "use-immer";
 import { Line } from "./line";
 import { Stats } from "./stats";
@@ -36,14 +36,16 @@ export default function Home() {
   const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
   const [stopTimestamp, setStopTimestamp] = useState<number | null>(null);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setUserInputs(new Array(countOfLines).fill(""));
     setUserPositions(new Array(countOfLines).fill(null));
     setCountOfErrors(0);
     setCurrentLine(0);
     setStartTimestamp(null);
     setStopTimestamp(null);
-  };
+    setCorrectlyPressedKeys(new Map<string, number>());
+    setIncorrectlyPressedKeys(new Map<string, number>());
+  }, []);
 
   useEffect(() => {
     function handleKeys(event: KeyboardEvent): void {
