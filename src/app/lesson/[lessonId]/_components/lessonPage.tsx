@@ -48,6 +48,7 @@ export default function LessonPage() {
     setUserInputs(new Array(countOfLines).fill(""));
     setUserPositions(new Array(countOfLines).fill(null));
     setCountOfErrors(0);
+    setTotalKeypresses(0);
     setCurrentLine(0);
     setStartTimestamp(null);
     setStopTimestamp(null);

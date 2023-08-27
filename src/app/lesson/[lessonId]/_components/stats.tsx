@@ -37,7 +37,7 @@ export function Stats({
 
   const wpm = getWPM(userInput, passedTime);
   const adjustedWPM = getAdjustedWPM(targetText, userInput, passedTime);
-  const accuracy = ((1 - countOfErrors / totalKeypresses) * 100).toFixed(1);
+  const accuracy = getAccuracy(countOfErrors, totalKeypresses);
   const leastAccurateKeys = getLeastAccurateKeys(
     correctlyPressedKeys,
     incorrectlyPressedKeys,
@@ -78,6 +78,15 @@ export function Stats({
     return () => document.removeEventListener("keydown", handleNavigation);
   }, []);
 
+  function getAccuracy(countOfErrors: number, totalKeypresses: number) {
+    const accuracy = (1 - countOfErrors / totalKeypresses) * 100;
+
+    if (isNaN(accuracy)) {
+      return "-";
+    }
+    return `${accuracy.toFixed()} %`;
+  }
+
   function getAdjustedWPM(
     targetString: string,
     userInput: string,
@@ -96,7 +105,12 @@ export function Stats({
       totalCorrectWords++;
     });
 
-    const adjustedWPM = ((60 * totalCorrectWords) / passedTime).toFixed(1);
+    const adjustedWPM = (60 * totalCorrectWords) / passedTime;
+
+    if (isNaN(adjustedWPM)) {
+      return "-";
+    }
+    return adjustedWPM.toFixed();
 
     function getWordsMap(keys: string[][]) {
       const words = new Map<string, string>();
@@ -128,12 +142,16 @@ export function Stats({
       }
       return words;
     }
-    return adjustedWPM;
   }
 
   function getWPM(userInput: string, passedTime: number) {
     const countOfTypedWords = userInput.match(/\S+/g)?.length ?? 0;
-    return ((60 * countOfTypedWords) / passedTime).toFixed(1);
+    const wpm = (60 * countOfTypedWords) / passedTime;
+
+    if (isNaN(wpm)) {
+      return "-";
+    }
+    return wpm.toFixed();
   }
 
   function getLeastAccurateKeys(
@@ -156,7 +174,8 @@ export function Stats({
 
     const fiveLEastAccurateKeys = keysWithAccuracy
       .sort((key1, key2) => key1.accuracy - key2.accuracy)
-      .slice(0, 5);
+      .slice(0, 5)
+      .map((key) => ({ ...key, accuracy: `${key.accuracy.toFixed()} %` }));
     return fiveLEastAccurateKeys;
   }
 
@@ -164,7 +183,7 @@ export function Stats({
     <div className="flex flex-col gap-4">
       <div>
         <p>
-          <b>Accuracy:</b> <span>{accuracy}%</span>
+          <b>Accuracy:</b> <span>{accuracy}</span>
         </p>
         <p>
           <b>Raw WPM:</b> <span>{wpm}</span>
@@ -181,8 +200,9 @@ export function Stats({
               <li key={key.key}>
                 <span className="inline-block w-[9.6px] text-center">
                   {key.key === " " ? "␣" : key.key}
-                </span>{" "}
-                — {key.accuracy.toFixed(1)}%
+                </span>
+                {" — "}
+                <span>{key.accuracy}</span>
               </li>
             ))}
           </ol>
