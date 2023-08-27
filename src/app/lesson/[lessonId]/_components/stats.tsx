@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
+import { useLessonContext } from "./lessonProvider";
+import { useRouter } from "next/navigation";
 
 type StatsProps = {
   start: number;
   stop: number;
-  targetText: string;
   countOfErrors: number;
   totalKeypresses: number;
   userInput: string;
@@ -18,11 +19,20 @@ export function Stats({
   totalKeypresses,
   countOfErrors,
   onReset,
-  targetText,
   userInput,
   correctlyPressedKeys,
   incorrectlyPressedKeys,
 }: StatsProps) {
+  const {
+    lesson,
+    currentPage: currentPart,
+    countOfPages: countOfParts,
+    onNextPage: onNextPart,
+  } = useLessonContext();
+  const targetText = lesson.pages[currentPart].text;
+
+  const router = useRouter();
+
   const passedTime = (stop - start) / 1000;
 
   const wpm = getWPM(userInput, passedTime);
@@ -33,14 +43,36 @@ export function Stats({
     incorrectlyPressedKeys,
   );
 
+  const exitLesson = useCallback(() => {
+    router.push("/");
+  }, []);
+
   useEffect(() => {
     document.addEventListener("keydown", handleNavigation);
 
     function handleNavigation(event: KeyboardEvent): void {
-      if (event.key !== "r") {
+      if (
+        !(
+          event.key === "r" ||
+          (event.key === "n" && currentPart < countOfParts - 1) ||
+          event.key === "Escape"
+        )
+      ) {
         return;
       }
-      onReset();
+
+      switch (event.key) {
+        case "r":
+          onReset();
+          return;
+        case "n":
+          onNextPart();
+          onReset();
+          return;
+        case "Escape":
+          exitLesson();
+          return;
+      }
     }
 
     return () => document.removeEventListener("keydown", handleNavigation);
@@ -156,12 +188,28 @@ export function Stats({
           </ol>
         </div>
       ) : null}
-      <button
-        className="self-start rounded-md bg-black px-1 py-0.5 text-white"
-        onClick={onReset}
-      >
-        Try again (r)
-      </button>
+      <div className="flex gap-4">
+        <button
+          className="self-start rounded-md bg-black px-1 py-0.5 text-white"
+          onClick={onReset}
+        >
+          Try again (r)
+        </button>
+        {currentPart < countOfParts - 1 ? (
+          <button
+            className="self-start rounded-md bg-black px-1 py-0.5 text-white"
+            onClick={onNextPart}
+          >
+            Next page (n)
+          </button>
+        ) : null}
+        <button
+          className="self-start rounded-md bg-black px-1 py-0.5 text-white"
+          onClick={exitLesson}
+        >
+          Exit lesson (Esc)
+        </button>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,12 @@
+pages:
+  - 1:
+    text: The brown fox jumps over the lazy dog.
+    description: |
+      super
+      long
+      description
+  - 2:
+    text: |
+      Some text with
+      Line
+      Breaks.
