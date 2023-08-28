@@ -67,13 +67,14 @@ export default function LessonProvider({
           break;
         }
         case "reset": {
-          if (draft.pagesMeta[draft.currentPage] === null) {
+          const meta = draft.pagesMeta[draft.currentPage];
+
+          if (meta === null) {
             break;
           }
 
           const countOfLines =
             lesson.pages[draft.currentPage].text!.split("\n").length;
-          const meta = draft.pagesMeta[draft.currentPage]!;
 
           meta.totalKeypresses = 0;
           meta.countOfErrors = 0;
@@ -87,12 +88,13 @@ export default function LessonProvider({
           break;
         }
         case "pressEnter": {
-          if (draft.pagesMeta[draft.currentPage] === null) {
+          const meta = draft.pagesMeta[draft.currentPage];
+          const targetText = lesson.pages[draft.currentPage].text;
+
+          if (meta === null || !targetText) {
             break;
           }
-          const countOfLines =
-            lesson.pages[draft.currentPage].text!.split("\n").length;
-          const meta = draft.pagesMeta[draft.currentPage]!;
+          const countOfLines = targetText.split("\n").length;
 
           if (meta.currentLine === countOfLines - 1) {
             meta.stopTimestamp = Date.now();
@@ -101,10 +103,11 @@ export default function LessonProvider({
           break;
         }
         case "pressChar": {
-          if (draft.pagesMeta[draft.currentPage] === null) {
+          const meta = draft.pagesMeta[draft.currentPage]!;
+
+          if (meta === null) {
             break;
           }
-          const meta = draft.pagesMeta[draft.currentPage]!;
 
           const currentPosition =
             meta.userPositions[meta.currentLine] === null
@@ -117,9 +120,6 @@ export default function LessonProvider({
             .text!.split("\n")
             [meta.currentLine].charAt(currentPosition);
           const pressedKey = action.payload;
-
-          console.log({ targetKey, pressedKey });
-          console.log(action);
 
           accountPressedKeys(targetKey, pressedKey);
 
@@ -151,11 +151,11 @@ export default function LessonProvider({
           break;
         }
         case "pressBackspace": {
-          if (draft.pagesMeta === null) {
+          const meta = draft.pagesMeta[draft.currentPage];
+
+          if (meta === null) {
             break;
           }
-
-          const meta = draft.pagesMeta[draft.currentPage]!;
 
           if (
             meta.userPositions[meta.currentLine] !== null &&
