@@ -1,8 +1,8 @@
 import { readdir, readFile } from "fs/promises";
 import path from "path";
 import yaml from "yaml";
+import LessonPage from "./_components/lessonPage";
 import LessonProvider from "./_components/lessonProvider";
-import LessonPageRerenderer from "./_components/lessonPageRerenderer";
 import { LessonSchema } from "./_schemas/lessonSchema";
 
 export async function generateStaticParams() {
@@ -30,7 +30,7 @@ export default async function LessonFetcher({
   const lesson = await getLesson(params.lessonId);
   return (
     <LessonProvider lesson={lesson}>
-      <LessonPageRerenderer />
+      <LessonPage />
     </LessonProvider>
   );
 }

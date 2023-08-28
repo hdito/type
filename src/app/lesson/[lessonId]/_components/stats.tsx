@@ -1,183 +1,38 @@
-import { useCallback, useEffect } from "react";
+import { getAccuracy } from "./_statsUtils/getAccuracy";
+import { getAdjustedWPM } from "./_statsUtils/getAdjustedWPM";
+import { getLeastAccurateKeys } from "./_statsUtils/getLeastAccurateKeys";
+import { getWPM } from "./_statsUtils/getWPM";
 import { useLessonContext } from "./lessonProvider";
-import { useRouter } from "next/navigation";
 
-type StatsProps = {
-  start: number;
-  stop: number;
-  countOfErrors: number;
-  totalKeypresses: number;
-  userInput: string;
-  correctlyPressedKeys: Map<string, number>;
-  incorrectlyPressedKeys: Map<string, number>;
-  onReset: () => void;
-};
+export function Stats() {
+  const { lesson, pageState } = useLessonContext();
 
-export function Stats({
-  start,
-  stop,
-  totalKeypresses,
-  countOfErrors,
-  onReset,
-  userInput,
-  correctlyPressedKeys,
-  incorrectlyPressedKeys,
-}: StatsProps) {
-  const {
-    lesson,
-    currentPage: currentPart,
-    countOfPages: countOfParts,
-    onNextPage: onNextPart,
-  } = useLessonContext();
-  const targetText = lesson.pages[currentPart].text;
+  const pageMeta = pageState.pagesMeta[pageState.currentPage];
+  const pageContent = lesson.pages[pageState.currentPage];
 
-  const router = useRouter();
+  if (
+    pageMeta === null ||
+    !pageContent.text ||
+    pageMeta.stopTimestamp === null ||
+    pageMeta.startTimestamp === null
+  ) {
+    throw Error("Must be used only after finishing pages with typing");
+  }
 
-  const passedTime = (stop - start) / 1000;
+  const targetText = pageContent.text;
+  const userInput = pageMeta.userInputs.join("\n");
+  const passedTime = (pageMeta.stopTimestamp - pageMeta.startTimestamp) / 1000;
 
   const wpm = getWPM(userInput, passedTime);
   const adjustedWPM = getAdjustedWPM(targetText, userInput, passedTime);
-  const accuracy = getAccuracy(countOfErrors, totalKeypresses);
-  const leastAccurateKeys = getLeastAccurateKeys(
-    correctlyPressedKeys,
-    incorrectlyPressedKeys,
+  const accuracy = getAccuracy(
+    pageMeta.countOfErrors,
+    pageMeta.totalKeypresses,
   );
-
-  const exitLesson = useCallback(() => {
-    router.push("/");
-  }, []);
-
-  useEffect(() => {
-    document.addEventListener("keydown", handleNavigation);
-
-    function handleNavigation(event: KeyboardEvent): void {
-      if (
-        !(
-          event.key === "r" ||
-          (event.key === "n" && currentPart < countOfParts - 1) ||
-          event.key === "Escape"
-        )
-      ) {
-        return;
-      }
-
-      switch (event.key) {
-        case "r":
-          onReset();
-          return;
-        case "n":
-          onNextPart();
-          onReset();
-          return;
-        case "Escape":
-          exitLesson();
-          return;
-      }
-    }
-
-    return () => document.removeEventListener("keydown", handleNavigation);
-  }, []);
-
-  function getAccuracy(countOfErrors: number, totalKeypresses: number) {
-    const accuracy = (1 - countOfErrors / totalKeypresses) * 100;
-
-    if (isNaN(accuracy)) {
-      return "-";
-    }
-    return `${accuracy.toFixed()} %`;
-  }
-
-  function getAdjustedWPM(
-    targetString: string,
-    userInput: string,
-    passedTime: number,
-  ) {
-    const userKeys = userInput.split("\n").map((line) => line.split(""));
-    const targetKeys = targetString.split("\n").map((line) => line.split(""));
-
-    const userWords = getWordsMap(userKeys);
-    const targetWords = getWordsMap(targetKeys);
-
-    let totalCorrectWords = 0;
-
-    targetWords.forEach((value, key) => {
-      if (userWords.get(key) !== value) return;
-      totalCorrectWords++;
-    });
-
-    const adjustedWPM = (60 * totalCorrectWords) / passedTime;
-
-    if (isNaN(adjustedWPM)) {
-      return "-";
-    }
-    return adjustedWPM.toFixed();
-
-    function getWordsMap(keys: string[][]) {
-      const words = new Map<string, string>();
-
-      for (let i = 0; i < keys.length; i++) {
-        const line = keys[i];
-        let currentWord: { start: number; word: string } | null = null;
-
-        for (let j = 0; j < line.length; j++) {
-          const key = line[j];
-
-          if (key !== " ") {
-            if (currentWord !== null) {
-              currentWord.word = currentWord.word + key;
-              words.set(
-                i.toString(16).padStart(2, "0") + currentWord.start,
-                currentWord.word,
-              );
-              continue;
-            }
-            currentWord = { start: j, word: key };
-            words.set(i.toString(16).padStart(2, "0") + currentWord.start, key);
-            continue;
-          }
-
-          if (currentWord === null) continue;
-          currentWord = null;
-        }
-      }
-      return words;
-    }
-  }
-
-  function getWPM(userInput: string, passedTime: number) {
-    const countOfTypedWords = userInput.match(/\S+/g)?.length ?? 0;
-    const wpm = (60 * countOfTypedWords) / passedTime;
-
-    if (isNaN(wpm)) {
-      return "-";
-    }
-    return wpm.toFixed();
-  }
-
-  function getLeastAccurateKeys(
-    correctlyPressedKeys: Map<string, number>,
-    incorrectlyPressedKeys: Map<string, number>,
-  ) {
-    const keys = new Set<string>();
-    const keysWithAccuracy: { key: string; accuracy: number }[] = [];
-    correctlyPressedKeys.forEach((_, key) => keys.add(key));
-    incorrectlyPressedKeys.forEach((_, key) => keys.add(key));
-    keys.forEach((key) => {
-      const accuracy =
-        (1 -
-          (incorrectlyPressedKeys.get(key) ?? 0) /
-            ((correctlyPressedKeys.get(key) ?? 0) +
-              (incorrectlyPressedKeys.get(key) ?? 0))) *
-        100;
-      keysWithAccuracy.push({ key, accuracy });
-    });
-
-    const fiveLEastAccurateKeys = keysWithAccuracy
-      .sort((key1, key2) => key1.accuracy - key2.accuracy)
-      .slice(0, 5)
-      .map((key) => ({ ...key, accuracy: `${key.accuracy.toFixed()} %` }));
-    return fiveLEastAccurateKeys;
-  }
+  const leastAccurateKeys = getLeastAccurateKeys(
+    pageMeta.correctlyPressedKeys,
+    pageMeta.incorrectlyPressedKeys,
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -208,28 +63,6 @@ export function Stats({
           </ol>
         </div>
       ) : null}
-      <div className="flex gap-4">
-        <button
-          className="self-start rounded-md bg-black px-1 py-0.5 text-white"
-          onClick={onReset}
-        >
-          Try again (r)
-        </button>
-        {currentPart < countOfParts - 1 ? (
-          <button
-            className="self-start rounded-md bg-black px-1 py-0.5 text-white"
-            onClick={onNextPart}
-          >
-            Next page (n)
-          </button>
-        ) : null}
-        <button
-          className="self-start rounded-md bg-black px-1 py-0.5 text-white"
-          onClick={exitLesson}
-        >
-          Exit lesson (Esc)
-        </button>
-      </div>
     </div>
   );
 }
