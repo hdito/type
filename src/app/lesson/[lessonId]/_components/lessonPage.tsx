@@ -9,17 +9,17 @@ import LessonNavigation from "./lessonNavigation";
 enableMapSet();
 
 export default function LessonPage() {
-  const { lesson, dispatch, pageState } = useLessonContext();
+  const { lesson, dispatch, lessonState } = useLessonContext();
   const [isOpenNavigationWithKeyboard, setIsOpenNavigationWithKeyboard] =
     useState(false);
 
   const pageMeta = useMemo(
-    () => pageState.pagesMeta[pageState.currentPage],
-    [pageState],
+    () => lessonState.pagesMeta[lessonState.currentPage],
+    [lessonState],
   );
   const pageContent = useMemo(
-    () => lesson.pages[pageState.currentPage],
-    [lesson, pageState.currentPage],
+    () => lesson.pages[lessonState.currentPage],
+    [lesson, lessonState.currentPage],
   );
 
   const isShowResults =

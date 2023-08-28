@@ -7,11 +7,11 @@ type LessonNavigationProps = {
 };
 
 export default function LessonNavigation({ onAction }: LessonNavigationProps) {
-  const { dispatch, pageState, lesson } = useLessonContext();
+  const { dispatch, lessonState, lesson } = useLessonContext();
   const router = useRouter();
 
   const countOfPages = lesson.pages.length;
-  const pageMeta = pageState.pagesMeta[pageState.currentPage];
+  const pageMeta = lessonState.pagesMeta[lessonState.currentPage];
 
   const exitLesson = useCallback(() => {
     router.push("/");
@@ -35,8 +35,8 @@ export default function LessonNavigation({ onAction }: LessonNavigationProps) {
       if (
         !(
           (event.key === "r" && pageMeta !== null) ||
-          (event.key === "n" && pageState.currentPage < countOfPages - 1) ||
-          (event.key === "p" && pageState.currentPage > 0) ||
+          (event.key === "n" && lessonState.currentPage < countOfPages - 1) ||
+          (event.key === "p" && lessonState.currentPage > 0) ||
           event.key === "e"
         )
       ) {
@@ -67,7 +67,7 @@ export default function LessonNavigation({ onAction }: LessonNavigationProps) {
     goToNextPage,
     goToPreviousPage,
     pageMeta,
-    pageState.currentPage,
+    lessonState.currentPage,
     reset,
     onAction,
   ]);
@@ -82,7 +82,7 @@ export default function LessonNavigation({ onAction }: LessonNavigationProps) {
           Try again (r)
         </button>
       ) : null}
-      {pageState.currentPage > 0 ? (
+      {lessonState.currentPage > 0 ? (
         <button
           className="self-start rounded-md bg-black px-1 py-0.5 text-white"
           onClick={goToPreviousPage}
@@ -90,7 +90,7 @@ export default function LessonNavigation({ onAction }: LessonNavigationProps) {
           Previous page (p)
         </button>
       ) : null}
-      {pageState.currentPage < countOfPages - 1 ? (
+      {lessonState.currentPage < countOfPages - 1 ? (
         <button
           className="self-start rounded-md bg-black px-1 py-0.5 text-white"
           onClick={goToNextPage}

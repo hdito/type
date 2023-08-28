@@ -5,10 +5,10 @@ import { getWPM } from "./_statsUtils/getWPM";
 import { useLessonContext } from "./lessonProvider";
 
 export function Stats() {
-  const { lesson, pageState } = useLessonContext();
+  const { lesson, lessonState } = useLessonContext();
 
-  const pageMeta = pageState.pagesMeta[pageState.currentPage];
-  const pageContent = lesson.pages[pageState.currentPage];
+  const pageMeta = lessonState.pagesMeta[lessonState.currentPage];
+  const pageContent = lesson.pages[lessonState.currentPage];
 
   if (
     pageMeta === null ||

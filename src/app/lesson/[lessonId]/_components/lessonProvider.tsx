@@ -36,7 +36,7 @@ type State = {
 const LessonContext = createContext<{
   lesson: Lesson;
   dispatch: Dispatch<Action>;
-  pageState: State;
+  lessonState: State;
 } | null>(null);
 
 export const useLessonContext = () => {
@@ -51,7 +51,7 @@ export default function LessonProvider({
   lesson,
   children,
 }: LessonProviderProps) {
-  const [pageState, dispatch] = useImmerReducer<State, Action>(
+  const [lessonState, dispatch] = useImmerReducer<State, Action>(
     (draft, action) => {
       switch (action.type) {
         case "start": {
@@ -236,7 +236,7 @@ export default function LessonProvider({
       value={{
         lesson,
         dispatch,
-        pageState,
+        lessonState,
       }}
     >
       {children}
