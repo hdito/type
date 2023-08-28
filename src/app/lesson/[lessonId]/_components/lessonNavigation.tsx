@@ -16,10 +16,10 @@ export default function LessonNavigation() {
     dispatch({ type: "reset" });
   }, [dispatch]);
   const goToNextPage = useCallback(() => {
-    dispatch({ type: "nextPage" });
+    dispatch({ type: "goToNextPage" });
   }, [dispatch]);
   const goToPreviousPage = useCallback(() => {
-    dispatch({ type: "previousPage" });
+    dispatch({ type: "goToPreviousPage" });
   }, [dispatch]);
 
   useEffect(() => {

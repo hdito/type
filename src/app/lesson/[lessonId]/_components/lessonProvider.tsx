@@ -6,15 +6,13 @@ import type { Lesson } from "../_schemas/lessonSchema";
 type LessonProviderProps = PropsWithChildren<{ lesson: Lesson }>;
 
 type Action =
-  | {
-      type: "nextPage";
-    }
+  | { type: "goToNextPage" }
+  | { type: "goToPreviousPage" }
   | { type: "reset" }
+  | { type: "start" }
   | { type: "pressBackspace" }
   | { type: "pressEnter" }
-  | { type: "previousPage" }
-  | { type: "pressChar"; payload: string }
-  | { type: "setStartTimestamp" };
+  | { type: "pressChar"; payload: string };
 
 type State = {
   currentPage: number;
@@ -53,18 +51,17 @@ export default function LessonProvider({
   const [pageState, dispatch] = useImmerReducer<State, Action>(
     (draft, action) => {
       switch (action.type) {
-        case "setStartTimestamp": {
+        case "start": {
           const pageMeta = draft.pagesMeta[draft.currentPage];
           if (pageMeta === null) break;
-
-          pageMeta!.startTimestamp = Date.now();
+          pageMeta.startTimestamp = Date.now();
           break;
         }
-        case "nextPage": {
+        case "goToNextPage": {
           draft.currentPage++;
           break;
         }
-        case "previousPage": {
+        case "goToPreviousPage": {
           if (draft.currentPage < 1) break;
           draft.currentPage--;
           break;
