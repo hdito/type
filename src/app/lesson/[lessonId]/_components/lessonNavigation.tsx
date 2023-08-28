@@ -2,7 +2,11 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 import { useLessonContext } from "./lessonProvider";
 
-export default function LessonNavigation() {
+type LessonNavigationProps = {
+  onAction: () => void;
+};
+
+export default function LessonNavigation({ onAction }: LessonNavigationProps) {
   const { dispatch, pageState, lesson } = useLessonContext();
   const router = useRouter();
 
@@ -17,9 +21,11 @@ export default function LessonNavigation() {
   }, [dispatch]);
   const goToNextPage = useCallback(() => {
     dispatch({ type: "goToNextPage" });
+    dispatch({ type: "reset" });
   }, [dispatch]);
   const goToPreviousPage = useCallback(() => {
     dispatch({ type: "goToPreviousPage" });
+    dispatch({ type: "reset" });
   }, [dispatch]);
 
   useEffect(() => {
@@ -31,7 +37,7 @@ export default function LessonNavigation() {
           (event.key === "r" && pageMeta !== null) ||
           (event.key === "n" && pageState.currentPage < countOfPages - 1) ||
           (event.key === "p" && pageState.currentPage > 0) ||
-          event.key === "Escape"
+          event.key === "e"
         )
       ) {
         return;
@@ -44,13 +50,14 @@ export default function LessonNavigation() {
         case "n":
           goToNextPage();
           break;
-        case "Escape":
+        case "e":
           exitLesson();
           break;
         case "p":
           goToPreviousPage();
           break;
       }
+      onAction();
     }
 
     return () => document.removeEventListener("keydown", handleNavigation);
@@ -62,6 +69,7 @@ export default function LessonNavigation() {
     pageMeta,
     pageState.currentPage,
     reset,
+    onAction,
   ]);
 
   return (
@@ -94,7 +102,7 @@ export default function LessonNavigation() {
         className="self-start rounded-md bg-black px-1 py-0.5 text-white"
         onClick={exitLesson}
       >
-        Exit lesson (Esc)
+        Exit lesson (e)
       </button>
     </div>
   );

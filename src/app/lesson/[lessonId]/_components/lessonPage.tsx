@@ -1,6 +1,6 @@
 "use client";
 import { enableMapSet } from "immer";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLessonContext } from "./lessonProvider";
 import LessonTypePane from "./lessonTypePane";
 import { Stats } from "./stats";
@@ -10,6 +10,8 @@ enableMapSet();
 
 export default function LessonPage() {
   const { lesson, dispatch, pageState } = useLessonContext();
+  const [isOpenNavigationWithKeyboard, setIsOpenNavigationWithKeyboard] =
+    useState(false);
 
   const pageMeta = useMemo(
     () => pageState.pagesMeta[pageState.currentPage],
@@ -27,8 +29,13 @@ export default function LessonPage() {
     pageMeta === null ||
     pageMeta.currentLine === pageContent.text?.split("\n").length;
 
+  const handleAction = useCallback(() => {
+    dispatch({ type: "resume" });
+    setIsOpenNavigationWithKeyboard(false);
+  }, [dispatch]);
+
   useEffect(() => {
-    if (pageMeta === null) {
+    if (pageMeta === null || isOpenNavigationWithKeyboard) {
       return;
     }
 
@@ -44,7 +51,7 @@ export default function LessonPage() {
       }
 
       if (pageMeta!.startTimestamp === null) {
-        dispatch({ type: "setStartTimestamp" });
+        dispatch({ type: "start" });
       }
 
       switch (event.key) {
@@ -61,7 +68,7 @@ export default function LessonPage() {
     }
 
     const countOfLines = pageContent.text!.split("\n").length;
-    const currentLine = pageMeta.currentLine;
+    const currentLine = pageMeta!.currentLine;
 
     if (currentLine < countOfLines) {
       document.addEventListener("keydown", handleKeys);
@@ -72,7 +79,24 @@ export default function LessonPage() {
         document.removeEventListener("keydown", handleKeys);
       }
     };
-  }, [dispatch, pageContent, pageMeta]);
+  }, [dispatch, pageContent, pageMeta, isOpenNavigationWithKeyboard]);
+
+  useEffect(() => {
+    function handleNavigation(event: KeyboardEvent) {
+      if (event.key !== "Escape") {
+        return;
+      }
+      if (isOpenNavigationWithKeyboard) {
+        dispatch({ type: "resume" });
+      } else {
+        dispatch({ type: "pause" });
+      }
+      setIsOpenNavigationWithKeyboard((prev) => !prev);
+    }
+
+    document.addEventListener("keydown", handleNavigation);
+    return () => document.removeEventListener("keydown", handleNavigation);
+  }, [dispatch, isOpenNavigationWithKeyboard]);
 
   return (
     <>
@@ -84,7 +108,9 @@ export default function LessonPage() {
         ) : null}
         {pageMeta !== null ? <LessonTypePane /> : null}
         {isShowResults ? <Stats /> : null}
-        {isShowNavigation ? <LessonNavigation /> : null}
+        {isShowNavigation || isOpenNavigationWithKeyboard ? (
+          <LessonNavigation onAction={handleAction} />
+        ) : null}
       </main>
     </>
   );

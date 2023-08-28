@@ -10,6 +10,8 @@ type Action =
   | { type: "goToPreviousPage" }
   | { type: "reset" }
   | { type: "start" }
+  | { type: "resume" }
+  | { type: "pause" }
   | { type: "pressBackspace" }
   | { type: "pressEnter" }
   | { type: "pressChar"; payload: string };
@@ -27,6 +29,7 @@ type State = {
     totalKeypresses: number;
     startTimestamp: number | null;
     stopTimestamp: number | null;
+    passedTime: number | null;
   } | null)[];
 };
 
@@ -85,6 +88,8 @@ export default function LessonProvider({
           meta.incorrectlyPressedKeys = new Map<string, number>();
           meta.userInputs = new Array(countOfLines).fill("");
           meta.userPositions = new Array(countOfLines).fill(null);
+          meta.passedTime = null;
+
           break;
         }
         case "pressEnter": {
@@ -181,6 +186,24 @@ export default function LessonProvider({
           meta.userInputs[meta.currentLine] = currentUserInput;
           break;
         }
+        case "pause": {
+          const meta = draft.pagesMeta[draft.currentPage]!;
+          if (meta.startTimestamp === null || meta.stopTimestamp !== null) {
+            break;
+          }
+          meta.passedTime = Date.now() - meta.startTimestamp;
+        }
+        case "resume": {
+          const meta = draft.pagesMeta[draft.currentPage]!;
+          if (
+            meta.startTimestamp === null ||
+            meta.passedTime === null ||
+            meta.stopTimestamp !== null
+          ) {
+            break;
+          }
+          meta.startTimestamp = Date.now() - meta.passedTime;
+        }
       }
     },
     {
@@ -202,6 +225,7 @@ export default function LessonProvider({
           totalKeypresses: 0,
           startTimestamp: null,
           stopTimestamp: null,
+          passedTime: null,
         };
       }),
     },
