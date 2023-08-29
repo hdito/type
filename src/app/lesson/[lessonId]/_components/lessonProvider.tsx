@@ -51,6 +51,7 @@ export default function LessonProvider({
   lesson,
   children,
 }: LessonProviderProps) {
+  const countOfPages = lesson.pages.length;
   const [lessonState, dispatch] = useImmerReducer<State, Action>(
     (draft, action) => {
       switch (action.type) {
@@ -61,6 +62,7 @@ export default function LessonProvider({
           break;
         }
         case "goToNextPage": {
+          if (draft.currentPage === countOfPages - 1) break;
           draft.currentPage++;
           break;
         }
@@ -71,7 +73,6 @@ export default function LessonProvider({
         }
         case "reset": {
           const meta = draft.pagesMeta[draft.currentPage];
-
           if (meta === null) {
             break;
           }
@@ -187,7 +188,8 @@ export default function LessonProvider({
           break;
         }
         case "pause": {
-          const meta = draft.pagesMeta[draft.currentPage]!;
+          const meta = draft.pagesMeta[draft.currentPage];
+          if (meta === null) break;
           if (meta.startTimestamp === null || meta.stopTimestamp !== null) {
             break;
           }
@@ -195,6 +197,7 @@ export default function LessonProvider({
         }
         case "resume": {
           const meta = draft.pagesMeta[draft.currentPage]!;
+          if (meta === null) break;
           if (
             meta.startTimestamp === null ||
             meta.passedTime === null ||
