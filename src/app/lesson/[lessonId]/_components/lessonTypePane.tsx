@@ -2,10 +2,10 @@ import { useLessonContext } from "./lessonProvider";
 import { Line } from "./line";
 
 export default function LessonTypePane() {
-  const { lesson, pageState } = useLessonContext();
+  const { lesson, lessonState } = useLessonContext();
 
-  const pageMeta = pageState.pagesMeta[pageState.currentPage]!;
-  const pageContent = lesson.pages[pageState.currentPage];
+  const pageMeta = lessonState.pagesMeta[lessonState.currentPage]!;
+  const pageContent = lesson.pages[lessonState.currentPage];
 
   const targetStrings = pageContent.text!.split("\n");
 

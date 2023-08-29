@@ -6,15 +6,15 @@ import type { Lesson } from "../_schemas/lessonSchema";
 type LessonProviderProps = PropsWithChildren<{ lesson: Lesson }>;
 
 type Action =
-  | {
-      type: "nextPage";
-    }
+  | { type: "goToNextPage" }
+  | { type: "goToPreviousPage" }
   | { type: "reset" }
+  | { type: "start" }
+  | { type: "resume" }
+  | { type: "pause" }
   | { type: "pressBackspace" }
   | { type: "pressEnter" }
-  | { type: "previousPage" }
-  | { type: "pressChar"; payload: string }
-  | { type: "setStartTimestamp" };
+  | { type: "pressChar"; payload: string };
 
 type State = {
   currentPage: number;
@@ -29,13 +29,14 @@ type State = {
     totalKeypresses: number;
     startTimestamp: number | null;
     stopTimestamp: number | null;
+    passedTime: number | null;
   } | null)[];
 };
 
 const LessonContext = createContext<{
   lesson: Lesson;
   dispatch: Dispatch<Action>;
-  pageState: State;
+  lessonState: State;
 } | null>(null);
 
 export const useLessonContext = () => {
@@ -50,33 +51,34 @@ export default function LessonProvider({
   lesson,
   children,
 }: LessonProviderProps) {
-  const [pageState, dispatch] = useImmerReducer<State, Action>(
+  const countOfPages = lesson.pages.length;
+  const [lessonState, dispatch] = useImmerReducer<State, Action>(
     (draft, action) => {
       switch (action.type) {
-        case "setStartTimestamp": {
+        case "start": {
           const pageMeta = draft.pagesMeta[draft.currentPage];
           if (pageMeta === null) break;
-
-          pageMeta!.startTimestamp = Date.now();
+          pageMeta.startTimestamp = Date.now();
           break;
         }
-        case "nextPage": {
+        case "goToNextPage": {
+          if (draft.currentPage === countOfPages - 1) break;
           draft.currentPage++;
           break;
         }
-        case "previousPage": {
+        case "goToPreviousPage": {
           if (draft.currentPage < 1) break;
           draft.currentPage--;
           break;
         }
         case "reset": {
-          if (draft.pagesMeta[draft.currentPage] === null) {
+          const meta = draft.pagesMeta[draft.currentPage];
+          if (meta === null) {
             break;
           }
 
           const countOfLines =
             lesson.pages[draft.currentPage].text!.split("\n").length;
-          const meta = draft.pagesMeta[draft.currentPage]!;
 
           meta.totalKeypresses = 0;
           meta.countOfErrors = 0;
@@ -87,15 +89,18 @@ export default function LessonProvider({
           meta.incorrectlyPressedKeys = new Map<string, number>();
           meta.userInputs = new Array(countOfLines).fill("");
           meta.userPositions = new Array(countOfLines).fill(null);
+          meta.passedTime = null;
+
           break;
         }
         case "pressEnter": {
-          if (draft.pagesMeta[draft.currentPage] === null) {
+          const meta = draft.pagesMeta[draft.currentPage];
+          const targetText = lesson.pages[draft.currentPage].text;
+
+          if (meta === null || !targetText) {
             break;
           }
-          const countOfLines =
-            lesson.pages[draft.currentPage].text!.split("\n").length;
-          const meta = draft.pagesMeta[draft.currentPage]!;
+          const countOfLines = targetText.split("\n").length;
 
           if (meta.currentLine === countOfLines - 1) {
             meta.stopTimestamp = Date.now();
@@ -104,10 +109,11 @@ export default function LessonProvider({
           break;
         }
         case "pressChar": {
-          if (draft.pagesMeta[draft.currentPage] === null) {
+          const meta = draft.pagesMeta[draft.currentPage]!;
+
+          if (meta === null) {
             break;
           }
-          const meta = draft.pagesMeta[draft.currentPage]!;
 
           const currentPosition =
             meta.userPositions[meta.currentLine] === null
@@ -120,9 +126,6 @@ export default function LessonProvider({
             .text!.split("\n")
             [meta.currentLine].charAt(currentPosition);
           const pressedKey = action.payload;
-
-          console.log({ targetKey, pressedKey });
-          console.log(action);
 
           accountPressedKeys(targetKey, pressedKey);
 
@@ -154,11 +157,11 @@ export default function LessonProvider({
           break;
         }
         case "pressBackspace": {
-          if (draft.pagesMeta === null) {
+          const meta = draft.pagesMeta[draft.currentPage];
+
+          if (meta === null) {
             break;
           }
-
-          const meta = draft.pagesMeta[draft.currentPage]!;
 
           if (
             meta.userPositions[meta.currentLine] !== null &&
@@ -184,6 +187,26 @@ export default function LessonProvider({
           meta.userInputs[meta.currentLine] = currentUserInput;
           break;
         }
+        case "pause": {
+          const meta = draft.pagesMeta[draft.currentPage];
+          if (meta === null) break;
+          if (meta.startTimestamp === null || meta.stopTimestamp !== null) {
+            break;
+          }
+          meta.passedTime = Date.now() - meta.startTimestamp;
+        }
+        case "resume": {
+          const meta = draft.pagesMeta[draft.currentPage]!;
+          if (meta === null) break;
+          if (
+            meta.startTimestamp === null ||
+            meta.passedTime === null ||
+            meta.stopTimestamp !== null
+          ) {
+            break;
+          }
+          meta.startTimestamp = Date.now() - meta.passedTime;
+        }
       }
     },
     {
@@ -205,6 +228,7 @@ export default function LessonProvider({
           totalKeypresses: 0,
           startTimestamp: null,
           stopTimestamp: null,
+          passedTime: null,
         };
       }),
     },
@@ -215,7 +239,7 @@ export default function LessonProvider({
       value={{
         lesson,
         dispatch,
-        pageState,
+        lessonState,
       }}
     >
       {children}

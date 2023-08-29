@@ -1,6 +1,6 @@
 import { readdir } from "fs/promises";
-import Link from "next/link";
 import path from "path";
+import Lessons from "./lessons";
 
 async function getLessonNames() {
   const lessonNames = await readdir(path.join(process.cwd(), "lessons"));
@@ -10,28 +10,23 @@ async function getLessonNames() {
   return lessonNamesWithoutExtension;
 }
 
-export default async function Home() {
+export default async function LessonsFetcher() {
   const lessonNames = await getLessonNames();
   return (
     <>
       <header className="flex flex-col gap-2 p-4">
         <h1 className="text-xl font-bold">Type</h1>
-        <p>Welcome to touch typing tutor</p>
+        <p>
+          <b className="font-black">The</b> tutor for touch typing practice
+        </p>
       </header>
       <main className="p-4">
-        <h2 className="text-lg font-bold">Lessons</h2>
-        <ol className="list-inside list-decimal">
-          {lessonNames.map((name) => (
-            <li key={name}>
-              <Link
-                href={`lesson/${name}`}
-                className=" hover:bg-black hover:text-white focus:bg-black focus:text-white"
-              >
-                {name}
-              </Link>
-            </li>
-          ))}
-        </ol>
+        {lessonNames.length !== 0 ? (
+          <>
+            <h2 className="text-lg font-bold">Lessons</h2>
+            <Lessons lessonNames={lessonNames} />
+          </>
+        ) : null}
       </main>
     </>
   );

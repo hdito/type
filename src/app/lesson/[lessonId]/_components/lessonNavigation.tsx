@@ -2,12 +2,16 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 import { useLessonContext } from "./lessonProvider";
 
-export default function LessonNavigation() {
-  const { dispatch, pageState, lesson } = useLessonContext();
+type LessonNavigationProps = {
+  onAction: () => void;
+};
+
+export default function LessonNavigation({ onAction }: LessonNavigationProps) {
+  const { dispatch, lessonState, lesson } = useLessonContext();
   const router = useRouter();
 
   const countOfPages = lesson.pages.length;
-  const pageMeta = pageState.pagesMeta[pageState.currentPage];
+  const pageMeta = lessonState.pagesMeta[lessonState.currentPage];
 
   const exitLesson = useCallback(() => {
     router.push("/");
@@ -16,10 +20,12 @@ export default function LessonNavigation() {
     dispatch({ type: "reset" });
   }, [dispatch]);
   const goToNextPage = useCallback(() => {
-    dispatch({ type: "nextPage" });
+    dispatch({ type: "goToNextPage" });
+    dispatch({ type: "reset" });
   }, [dispatch]);
   const goToPreviousPage = useCallback(() => {
-    dispatch({ type: "previousPage" });
+    dispatch({ type: "goToPreviousPage" });
+    dispatch({ type: "reset" });
   }, [dispatch]);
 
   useEffect(() => {
@@ -29,9 +35,9 @@ export default function LessonNavigation() {
       if (
         !(
           (event.key === "r" && pageMeta !== null) ||
-          (event.key === "n" && pageState.currentPage < countOfPages - 1) ||
-          (event.key === "p" && pageState.currentPage > 0) ||
-          event.key === "Escape"
+          (event.key === "n" && lessonState.currentPage < countOfPages - 1) ||
+          (event.key === "p" && lessonState.currentPage > 0) ||
+          event.key === "e"
         )
       ) {
         return;
@@ -44,13 +50,14 @@ export default function LessonNavigation() {
         case "n":
           goToNextPage();
           break;
-        case "Escape":
+        case "e":
           exitLesson();
           break;
         case "p":
           goToPreviousPage();
           break;
       }
+      onAction();
     }
 
     return () => document.removeEventListener("keydown", handleNavigation);
@@ -60,8 +67,9 @@ export default function LessonNavigation() {
     goToNextPage,
     goToPreviousPage,
     pageMeta,
-    pageState.currentPage,
+    lessonState.currentPage,
     reset,
+    onAction,
   ]);
 
   return (
@@ -74,7 +82,7 @@ export default function LessonNavigation() {
           Try again (r)
         </button>
       ) : null}
-      {pageState.currentPage > 0 ? (
+      {lessonState.currentPage > 0 ? (
         <button
           className="self-start rounded-md bg-black px-1 py-0.5 text-white"
           onClick={goToPreviousPage}
@@ -82,7 +90,7 @@ export default function LessonNavigation() {
           Previous page (p)
         </button>
       ) : null}
-      {pageState.currentPage < countOfPages - 1 ? (
+      {lessonState.currentPage < countOfPages - 1 ? (
         <button
           className="self-start rounded-md bg-black px-1 py-0.5 text-white"
           onClick={goToNextPage}
@@ -94,7 +102,7 @@ export default function LessonNavigation() {
         className="self-start rounded-md bg-black px-1 py-0.5 text-white"
         onClick={exitLesson}
       >
-        Exit lesson (Esc)
+        Exit lesson (e)
       </button>
     </div>
   );
