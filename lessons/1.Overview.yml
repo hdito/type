@@ -1,22 +1,22 @@
 pages:
   - 1:
     description: |
-      Welcome to this tutor for touch typing practise!
+      Welcome to this tutor for touch typing practice!
 
       Let me introduce you to its basics in the following pages.
   - 2:
     description: |
       The primary focus of this tutor is to compute deviations from provided text.
 
-      Your adjusted words per minute and key's accuracy are calculated based on accordance to given lines. So in theory you could type more than what you were asked for but why, you only spend your time and also it takes toll on total accuracy.
+      Your adjusted words per minute and key's accuracy are calculated based on accordance to given lines. So in theory you could type more than what you were asked for but why, you only spend your time and it also takes toll on total accuracy.
 
-      After finishing text block you will be given excercise result so you could take into account your weak spots.
+      After finishing text block you will be given exercise result so you could take into account your weak spots.
   - 3:
     description: |
       Navigation
 
-      In the main menu you can navigate between lessons using arrow keys or VIM bindings (j, k). To select lesson press Space, Enter or click on it.
+      In the main menu you can navigate between lessons using arrow keys, VIM bindings (j, k) or mouse. To select the lesson press Space, Enter or click on it.
 
-      In the exercise you can always press Escape to pause current input. Time spent in pause menu doesn't affect your WPM. To resume excercise press Escape again.
+      During the exercise you can always press Escape to pause the current input. Time spent in pause menu doesn't affect your WPM. To resume exercise press Escape again.
 
       Good luck!
