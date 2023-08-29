@@ -13,6 +13,8 @@ export default function LessonPage() {
   const [isOpenNavigationWithKeyboard, setIsOpenNavigationWithKeyboard] =
     useState(false);
 
+  const countOfPages = lesson.pages.length;
+
   const pageMeta = useMemo(
     () => lessonState.pagesMeta[lessonState.currentPage],
     [lessonState],
@@ -101,11 +103,12 @@ export default function LessonPage() {
   return (
     <>
       <main className="flex min-w-[50ch] flex-col gap-4 p-4">
-        {pageContent.description ? (
-          <div className="max-w-[50ch] whitespace-pre-line">
-            {pageContent.description}
-          </div>
-        ) : null}
+        <div className="max-w-[50ch] whitespace-pre-line">
+          <span>
+            ({lessonState.currentPage + 1}/{countOfPages})
+          </span>
+          {pageContent.description ? <> {pageContent.description}</> : null}
+        </div>
         {pageMeta !== null ? <LessonTypePane /> : null}
         {isShowResults ? <Stats /> : null}
         {isShowNavigation || isOpenNavigationWithKeyboard ? (
