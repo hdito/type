@@ -1,6 +1,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 import { useLessonContext } from "./lessonProvider";
+import Button from "@/components/Button";
 
 type LessonNavigationProps = {
   onAction: () => void;
@@ -75,35 +76,15 @@ export default function LessonNavigation({ onAction }: LessonNavigationProps) {
   return (
     <div className="flex gap-4">
       {pageMeta !== null ? (
-        <button
-          className="self-start rounded-md bg-black px-1 py-0.5 text-white"
-          onClick={reset}
-        >
-          Try again (r)
-        </button>
+        <Button onClick={reset}>Try again (r)</Button>
       ) : null}
       {lessonState.currentPage > 0 ? (
-        <button
-          className="self-start rounded-md bg-black px-1 py-0.5 text-white"
-          onClick={goToPreviousPage}
-        >
-          Previous page (p)
-        </button>
+        <Button onClick={goToPreviousPage}>Previous page (p)</Button>
       ) : null}
       {lessonState.currentPage < countOfPages - 1 ? (
-        <button
-          className="self-start rounded-md bg-black px-1 py-0.5 text-white"
-          onClick={goToNextPage}
-        >
-          Next page (n)
-        </button>
+        <Button onClick={goToNextPage}>Next page (n)</Button>
       ) : null}
-      <button
-        className="self-start rounded-md bg-black px-1 py-0.5 text-white"
-        onClick={exitLesson}
-      >
-        Exit lesson (e)
-      </button>
+      <Button onClick={exitLesson}>Exit lesson (e)</Button>
     </div>
   );
 }
