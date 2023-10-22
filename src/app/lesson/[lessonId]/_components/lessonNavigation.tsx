@@ -31,6 +31,10 @@ function LessonNavigation({ onAction }: LessonNavigationProps) {
     lessonStore.currentPage?.typePane?.reset();
   }, [lessonStore]);
 
+  const resume = useCallback(() => {
+    lessonStore.currentPage.typePane?.resume();
+  }, [lessonStore]);
+
   useEffect(() => {
     document.addEventListener("keydown", handleNavigation);
 
@@ -41,7 +45,9 @@ function LessonNavigation({ onAction }: LessonNavigationProps) {
           (event.key === "n" &&
             lessonStore.currentPageIndex < lessonStore.countOfPages - 1) ||
           (event.key === "p" && lessonStore.currentPageIndex > 0) ||
-          event.key === "e"
+          event.key === "e" ||
+          (event.key === "Escape" &&
+            lessonStore.currentPage.typePane?.status === "paused")
         )
       ) {
         return;
@@ -59,6 +65,9 @@ function LessonNavigation({ onAction }: LessonNavigationProps) {
           break;
         case "p":
           goToPreviousPage();
+          break;
+        case "Escape":
+          resume();
           break;
       }
       onAction();
@@ -80,9 +89,11 @@ function LessonNavigation({ onAction }: LessonNavigationProps) {
     lessonStore.currentPageIndex < lessonStore.countOfPages - 1;
   const hasPreviousPage = lessonStore.currentPageIndex > 0;
   const hasTask = lessonStore.currentPage.typePane !== null;
+  const isPaused = lessonStore.currentPage.typePane?.status === "paused";
 
   return (
     <div className="flex gap-4">
+      {isPaused ? <Button onClick={resume}>Resume (Esc)</Button> : null}
       {hasTask ? <Button onClick={reset}>Try again (r)</Button> : null}
       {hasPreviousPage ? (
         <Button onClick={goToPreviousPage}>Previous page (p)</Button>
