@@ -16,18 +16,19 @@ function LessonNavigation({ onAction }: LessonNavigationProps) {
     router.push("/");
   }, [router]);
 
-  const reset = useCallback(() => {
-    lessonStore.reset();
-  }, [lessonStore]);
+  const reset = useCallback(
+    () => lessonStore.currentPage?.typePane?.reset(),
+    [lessonStore.currentPage?.typePane],
+  );
 
   const goToNextPage = useCallback(() => {
     lessonStore.goToNextPage();
-    lessonStore.reset();
+    lessonStore.currentPage?.typePane?.reset();
   }, [lessonStore]);
 
   const goToPreviousPage = useCallback(() => {
     lessonStore.goToPreviousPage();
-    lessonStore.reset();
+    lessonStore.currentPage?.typePane?.reset();
   }, [lessonStore]);
 
   useEffect(() => {
@@ -36,10 +37,10 @@ function LessonNavigation({ onAction }: LessonNavigationProps) {
     function handleNavigation(event: KeyboardEvent): void {
       if (
         !(
-          (event.key === "r" && lessonStore.pageMeta !== null) ||
+          (event.key === "r" && lessonStore.currentPage?.typePane !== null) ||
           (event.key === "n" &&
-            lessonStore.currentPage < lessonStore.countOfPages - 1) ||
-          (event.key === "p" && lessonStore.currentPage > 0) ||
+            lessonStore.currentPageIndex < lessonStore.countOfPages - 1) ||
+          (event.key === "p" && lessonStore.currentPageIndex > 0) ||
           event.key === "e"
         )
       ) {
@@ -68,14 +69,17 @@ function LessonNavigation({ onAction }: LessonNavigationProps) {
     exitLesson,
     goToNextPage,
     goToPreviousPage,
-    lessonStore,
+    lessonStore.countOfPages,
+    lessonStore.currentPage?.typePane,
+    lessonStore.currentPageIndex,
     onAction,
     reset,
   ]);
 
-  const isLastPage = lessonStore.currentPage < lessonStore.countOfPages - 1;
-  const hasPreviousPage = lessonStore.currentPage > 0;
-  const hasTask = lessonStore.pageMeta !== null;
+  const isLastPage =
+    lessonStore.currentPageIndex < lessonStore.countOfPages - 1;
+  const hasPreviousPage = lessonStore.currentPageIndex > 0;
+  const hasTask = lessonStore.currentPage.typePane !== null;
 
   return (
     <div className="flex gap-4">

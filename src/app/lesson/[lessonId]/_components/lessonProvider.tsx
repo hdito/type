@@ -1,12 +1,11 @@
 "use client";
+import { Lesson } from "@/schemas/lessonSchema";
 import { LessonStore } from "@/stores/LessonStore";
 import { PropsWithChildren, createContext, useContext, useState } from "react";
-import type { Lesson } from "../_schemas/lessonSchema";
 
-type LessonProviderProps = PropsWithChildren<{ lesson: Lesson }>;
+type Props = PropsWithChildren<{ lesson: Lesson }>;
 
 const LessonContext = createContext<{
-  lesson: Lesson;
   lessonStore: LessonStore;
 } | null>(null);
 
@@ -18,16 +17,12 @@ export const useLessonContext = () => {
   return lessonContext;
 };
 
-export default function LessonProvider({
-  lesson,
-  children,
-}: LessonProviderProps) {
+export default function LessonProvider({ lesson, children }: Props) {
   const [lessonStore] = useState(new LessonStore(lesson));
 
   return (
     <LessonContext.Provider
       value={{
-        lesson,
         lessonStore,
       }}
     >

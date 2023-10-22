@@ -1,38 +1,32 @@
 "use client";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import LessonNavigation from "./lessonNavigation";
 import { useLessonContext } from "./lessonProvider";
 import LessonTypePane from "./lessonTypePane";
 import Stats from "./stats";
 
 function LessonPage() {
-  const { lesson, lessonStore } = useLessonContext();
-  const [isOpenNavigationWithKeyboard, setIsOpenNavigationWithKeyboard] =
-    useState(false);
+  const { lessonStore } = useLessonContext();
 
-  const countOfPages = lesson.pages.length;
+  const typePane = lessonStore.currentPage.typePane;
 
-  const isShowResults =
-    lessonStore.pageMeta !== null &&
-    lessonStore.content.text?.split("\n").length ===
-      lessonStore.pageMeta.currentLine;
   const isShowNavigation =
-    lessonStore.pageMeta === null ||
-    lessonStore.pageMeta.currentLine ===
-      lessonStore.content.text?.split("\n").length;
+    typePane === null ||
+    typePane.status === "finished" ||
+    typePane.status === "paused";
 
   const handleAction = useCallback(() => {
-    lessonStore.resume();
-    setIsOpenNavigationWithKeyboard(false);
-  }, [lessonStore]);
+    typePane?.resume();
+  }, [typePane]);
 
   useEffect(() => {
-    if (isShowNavigation) {
+    if (typePane === null || typePane.status !== "typing") {
       return;
     }
 
-    function handleKeys(event: KeyboardEvent): void {
+    function handleKeys(event: KeyboardEvent) {
+      if (typePane === null) return;
       if (
         !(
           event.key === "Backspace" ||
@@ -43,25 +37,25 @@ function LessonPage() {
         return;
       }
 
-      if (lessonStore.pageMeta!.startTimestamp === null) {
-        lessonStore.start();
+      if (typePane.startTimestamp === null) {
+        typePane.start();
       }
 
       switch (event.key) {
         case "Backspace":
-          lessonStore.pressBackspace();
+          typePane.pressBackspace();
           break;
         case "Enter":
-          lessonStore.pressEnter();
+          typePane.pressEnter();
           break;
         default:
-          lessonStore.pressChar(event.key);
+          typePane.pressChar(event.key);
           break;
       }
     }
 
-    const countOfLines = lessonStore.content.text!.split("\n").length;
-    const currentLine = lessonStore.pageMeta!.currentLine;
+    const countOfLines = typePane.countOfLines;
+    const currentLine = typePane.currentLineIndex;
 
     if (currentLine < countOfLines!) {
       document.addEventListener("keydown", handleKeys);
@@ -72,41 +66,42 @@ function LessonPage() {
         document.removeEventListener("keydown", handleKeys);
       }
     };
-  }, [lessonStore, isOpenNavigationWithKeyboard, isShowNavigation]);
+  }, [isShowNavigation, typePane, typePane?.status]);
 
   useEffect(() => {
     function handleNavigation(event: KeyboardEvent) {
       if (event.key !== "Escape") {
         return;
       }
-      if (isOpenNavigationWithKeyboard) {
-        lessonStore.resume();
-      } else {
-        lessonStore.pause();
+      if (typePane?.status === "paused") {
+        typePane.resume();
+        return;
       }
-      setIsOpenNavigationWithKeyboard((prev) => !prev);
+
+      if (typePane?.status === "typing") {
+        typePane.pause();
+        return;
+      }
     }
 
     document.addEventListener("keydown", handleNavigation);
     return () => document.removeEventListener("keydown", handleNavigation);
-  }, [isOpenNavigationWithKeyboard, lessonStore]);
+  }, [typePane, typePane?.status]);
 
   return (
     <>
       <main className="flex min-w-[50ch] flex-col gap-4 p-4">
         <div className="max-w-[50ch] whitespace-pre-line">
           <span>
-            ({lessonStore.currentPage + 1}/{countOfPages})
+            ({lessonStore.currentPageIndex + 1}/{lessonStore.countOfPages})
           </span>
-          {lessonStore.content.description ? (
-            <>{lessonStore.content.description}</>
+          {lessonStore.currentPage.description ? (
+            <>{lessonStore.currentPage.description}</>
           ) : null}
         </div>
-        {lessonStore.pageMeta !== null ? <LessonTypePane /> : null}
-        {isShowResults ? <Stats /> : null}
-        {isShowNavigation || isOpenNavigationWithKeyboard ? (
-          <LessonNavigation onAction={handleAction} />
-        ) : null}
+        {typePane !== null ? <LessonTypePane typePane={typePane} /> : null}
+        {typePane?.status === "finished" ? <Stats typePane={typePane} /> : null}
+        {isShowNavigation ? <LessonNavigation onAction={handleAction} /> : null}
       </main>
     </>
   );

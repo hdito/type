@@ -3,7 +3,7 @@ import path from "path";
 import yaml from "yaml";
 import LessonPage from "./_components/lessonPage";
 import LessonProvider from "./_components/lessonProvider";
-import { LessonSchema } from "./_schemas/lessonSchema";
+import { LessonSchema } from "@/schemas/lessonSchema";
 
 export async function generateStaticParams() {
   const lessonIds = await readdir(path.join(process.cwd(), "lessons"));
