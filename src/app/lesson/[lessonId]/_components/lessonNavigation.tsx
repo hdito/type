@@ -2,32 +2,33 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 import { useLessonContext } from "./lessonProvider";
 import Button from "@/components/Button";
+import { observer } from "mobx-react-lite";
 
 type LessonNavigationProps = {
   onAction: () => void;
 };
 
-export default function LessonNavigation({ onAction }: LessonNavigationProps) {
-  const { dispatch, lessonState, lesson } = useLessonContext();
+function LessonNavigation({ onAction }: LessonNavigationProps) {
+  const { lessonStore } = useLessonContext();
   const router = useRouter();
-
-  const countOfPages = lesson.pages.length;
-  const pageMeta = lessonState.pagesMeta[lessonState.currentPage];
 
   const exitLesson = useCallback(() => {
     router.push("/");
   }, [router]);
+
   const reset = useCallback(() => {
-    dispatch({ type: "reset" });
-  }, [dispatch]);
+    lessonStore.reset();
+  }, [lessonStore]);
+
   const goToNextPage = useCallback(() => {
-    dispatch({ type: "goToNextPage" });
-    dispatch({ type: "reset" });
-  }, [dispatch]);
+    lessonStore.goToNextPage();
+    lessonStore.reset();
+  }, [lessonStore]);
+
   const goToPreviousPage = useCallback(() => {
-    dispatch({ type: "goToPreviousPage" });
-    dispatch({ type: "reset" });
-  }, [dispatch]);
+    lessonStore.goToPreviousPage();
+    lessonStore.reset();
+  }, [lessonStore]);
 
   useEffect(() => {
     document.addEventListener("keydown", handleNavigation);
@@ -35,9 +36,10 @@ export default function LessonNavigation({ onAction }: LessonNavigationProps) {
     function handleNavigation(event: KeyboardEvent): void {
       if (
         !(
-          (event.key === "r" && pageMeta !== null) ||
-          (event.key === "n" && lessonState.currentPage < countOfPages - 1) ||
-          (event.key === "p" && lessonState.currentPage > 0) ||
+          (event.key === "r" && lessonStore.pageMeta !== null) ||
+          (event.key === "n" &&
+            lessonStore.currentPage < lessonStore.countOfPages - 1) ||
+          (event.key === "p" && lessonStore.currentPage > 0) ||
           event.key === "e"
         )
       ) {
@@ -63,28 +65,30 @@ export default function LessonNavigation({ onAction }: LessonNavigationProps) {
 
     return () => document.removeEventListener("keydown", handleNavigation);
   }, [
-    countOfPages,
     exitLesson,
     goToNextPage,
     goToPreviousPage,
-    pageMeta,
-    lessonState.currentPage,
-    reset,
+    lessonStore,
     onAction,
+    reset,
   ]);
+
+  const isLastPage = lessonStore.currentPage < lessonStore.countOfPages - 1;
+  const hasPreviousPage = lessonStore.currentPage > 0;
+  const hasTask = lessonStore.pageMeta !== null;
 
   return (
     <div className="flex gap-4">
-      {pageMeta !== null ? (
-        <Button onClick={reset}>Try again (r)</Button>
-      ) : null}
-      {lessonState.currentPage > 0 ? (
+      {hasTask ? <Button onClick={reset}>Try again (r)</Button> : null}
+      {hasPreviousPage ? (
         <Button onClick={goToPreviousPage}>Previous page (p)</Button>
       ) : null}
-      {lessonState.currentPage < countOfPages - 1 ? (
+      {isLastPage ? (
         <Button onClick={goToNextPage}>Next page (n)</Button>
       ) : null}
       <Button onClick={exitLesson}>Exit lesson (e)</Button>
     </div>
   );
 }
+
+export default observer(LessonNavigation);

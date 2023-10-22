@@ -1,3 +1,5 @@
+import { observer } from "mobx-react-lite";
+
 type LineProps = {
   targetString: string;
   isEditable: boolean;
@@ -5,19 +7,14 @@ type LineProps = {
   userErrors: Set<number>;
 };
 
-export function Line({
-  targetString,
-  isEditable,
-  userErrors,
-  userInput,
-}: LineProps) {
-  const renderBlocks = targetString.split("");
+function Line({ targetString, isEditable, userErrors, userInput }: LineProps) {
+  const renderTargetText = targetString.split("");
   const renderUserInput = userInput.split("");
 
   return (
     <>
       <div className="flex h-6">
-        {renderBlocks.map((char, index) => (
+        {renderTargetText.map((char, index) => (
           <span className="inline-block w-[9.6px] text-center" key={index}>
             {char}
           </span>
@@ -39,3 +36,5 @@ export function Line({
     </>
   );
 }
+
+export default observer(Line);

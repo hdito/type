@@ -1,13 +1,12 @@
+import { observer } from "mobx-react-lite";
 import { useLessonContext } from "./lessonProvider";
-import { Line } from "./line";
+import Line from "./line";
 
-export default function LessonTypePane() {
-  const { lesson, lessonState } = useLessonContext();
+function LessonTypePane() {
+  const { lessonStore } = useLessonContext();
 
-  const pageMeta = lessonState.pagesMeta[lessonState.currentPage]!;
-  const pageContent = lesson.pages[lessonState.currentPage];
-
-  const targetStrings = pageContent.text!.split("\n");
+  const pageMeta = lessonStore.pagesMeta[lessonStore.currentPage]!;
+  const targetStrings = lessonStore.content.text!.split("\n");
 
   return (
     <div>
@@ -23,3 +22,5 @@ export default function LessonTypePane() {
     </div>
   );
 }
+
+export default observer(LessonTypePane);

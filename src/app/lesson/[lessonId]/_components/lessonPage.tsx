@@ -1,43 +1,34 @@
 "use client";
-import { enableMapSet } from "immer";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { observer } from "mobx-react-lite";
+import { useCallback, useEffect, useState } from "react";
+import LessonNavigation from "./lessonNavigation";
 import { useLessonContext } from "./lessonProvider";
 import LessonTypePane from "./lessonTypePane";
-import { Stats } from "./stats";
-import LessonNavigation from "./lessonNavigation";
+import Stats from "./stats";
 
-enableMapSet();
-
-export default function LessonPage() {
-  const { lesson, dispatch, lessonState } = useLessonContext();
+function LessonPage() {
+  const { lesson, lessonStore } = useLessonContext();
   const [isOpenNavigationWithKeyboard, setIsOpenNavigationWithKeyboard] =
     useState(false);
 
   const countOfPages = lesson.pages.length;
 
-  const pageMeta = useMemo(
-    () => lessonState.pagesMeta[lessonState.currentPage],
-    [lessonState],
-  );
-  const pageContent = useMemo(
-    () => lesson.pages[lessonState.currentPage],
-    [lesson, lessonState.currentPage],
-  );
-
   const isShowResults =
-    pageMeta !== null &&
-    pageContent.text?.split("\n").length === pageMeta.currentLine;
+    lessonStore.pageMeta !== null &&
+    lessonStore.content.text?.split("\n").length ===
+      lessonStore.pageMeta.currentLine;
   const isShowNavigation =
-    pageMeta === null ||
-    pageMeta.currentLine === pageContent.text?.split("\n").length;
+    lessonStore.pageMeta === null ||
+    lessonStore.pageMeta.currentLine ===
+      lessonStore.content.text?.split("\n").length;
 
   const handleAction = useCallback(() => {
-    dispatch({ type: "resume" });
+    lessonStore.resume();
     setIsOpenNavigationWithKeyboard(false);
-  }, [dispatch]);
+  }, [lessonStore]);
 
   useEffect(() => {
-    if (pageMeta === null || isOpenNavigationWithKeyboard) {
+    if (isShowNavigation) {
       return;
     }
 
@@ -52,27 +43,27 @@ export default function LessonPage() {
         return;
       }
 
-      if (pageMeta!.startTimestamp === null) {
-        dispatch({ type: "start" });
+      if (lessonStore.pageMeta!.startTimestamp === null) {
+        lessonStore.start();
       }
 
       switch (event.key) {
         case "Backspace":
-          dispatch({ type: "pressBackspace" });
+          lessonStore.pressBackspace();
           break;
         case "Enter":
-          dispatch({ type: "pressEnter" });
+          lessonStore.pressEnter();
           break;
         default:
-          dispatch({ type: "pressChar", payload: event.key });
+          lessonStore.pressChar(event.key);
           break;
       }
     }
 
-    const countOfLines = pageContent.text!.split("\n").length;
-    const currentLine = pageMeta!.currentLine;
+    const countOfLines = lessonStore.content.text!.split("\n").length;
+    const currentLine = lessonStore.pageMeta!.currentLine;
 
-    if (currentLine < countOfLines) {
+    if (currentLine < countOfLines!) {
       document.addEventListener("keydown", handleKeys);
     }
 
@@ -81,7 +72,7 @@ export default function LessonPage() {
         document.removeEventListener("keydown", handleKeys);
       }
     };
-  }, [dispatch, pageContent, pageMeta, isOpenNavigationWithKeyboard]);
+  }, [lessonStore, isOpenNavigationWithKeyboard, isShowNavigation]);
 
   useEffect(() => {
     function handleNavigation(event: KeyboardEvent) {
@@ -89,27 +80,29 @@ export default function LessonPage() {
         return;
       }
       if (isOpenNavigationWithKeyboard) {
-        dispatch({ type: "resume" });
+        lessonStore.resume();
       } else {
-        dispatch({ type: "pause" });
+        lessonStore.pause();
       }
       setIsOpenNavigationWithKeyboard((prev) => !prev);
     }
 
     document.addEventListener("keydown", handleNavigation);
     return () => document.removeEventListener("keydown", handleNavigation);
-  }, [dispatch, isOpenNavigationWithKeyboard]);
+  }, [isOpenNavigationWithKeyboard, lessonStore]);
 
   return (
     <>
       <main className="flex min-w-[50ch] flex-col gap-4 p-4">
         <div className="max-w-[50ch] whitespace-pre-line">
           <span>
-            ({lessonState.currentPage + 1}/{countOfPages})
+            ({lessonStore.currentPage + 1}/{countOfPages})
           </span>
-          {pageContent.description ? <> {pageContent.description}</> : null}
+          {lessonStore.content.description ? (
+            <>{lessonStore.content.description}</>
+          ) : null}
         </div>
-        {pageMeta !== null ? <LessonTypePane /> : null}
+        {lessonStore.pageMeta !== null ? <LessonTypePane /> : null}
         {isShowResults ? <Stats /> : null}
         {isShowNavigation || isOpenNavigationWithKeyboard ? (
           <LessonNavigation onAction={handleAction} />
@@ -118,3 +111,5 @@ export default function LessonPage() {
     </>
   );
 }
+
+export default observer(LessonPage);
