@@ -4,5 +4,7 @@ export function getAccuracy(countOfErrors: number, totalKeypresses: number) {
   if (isNaN(accuracy)) {
     return "-";
   }
-  return `${accuracy.toFixed()} %`;
+  return `${accuracy.toFixed()} % (${
+    totalKeypresses - countOfErrors
+  }/${totalKeypresses})`;
 }
