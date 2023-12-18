@@ -1,57 +1,29 @@
-import { getAccuracy } from "./_statsUtils/getAccuracy";
-import { getAdjustedWPM } from "./_statsUtils/getAdjustedWPM";
-import { getLeastAccurateKeys } from "./_statsUtils/getLeastAccurateKeys";
-import { getWPM } from "./_statsUtils/getWPM";
-import { useLessonContext } from "./lessonProvider";
+import { observer } from "mobx-react-lite";
+import { TypePaneStore } from "@/stores/TypePaneStore";
 
-export function Stats() {
-  const { lesson, lessonState } = useLessonContext();
+type Props = {
+  typePane: TypePaneStore;
+};
 
-  const pageMeta = lessonState.pagesMeta[lessonState.currentPage];
-  const pageContent = lesson.pages[lessonState.currentPage];
-
-  if (
-    pageMeta === null ||
-    !pageContent.text ||
-    pageMeta.stopTimestamp === null ||
-    pageMeta.startTimestamp === null
-  ) {
-    throw Error("Must be used only after finishing pages with typing");
-  }
-
-  const targetText = pageContent.text;
-  const userInput = pageMeta.userInputs.join("\n");
-  const passedTime = (pageMeta.stopTimestamp - pageMeta.startTimestamp) / 1000;
-
-  const wpm = getWPM(userInput, passedTime);
-  const adjustedWPM = getAdjustedWPM(targetText, userInput, passedTime);
-  const accuracy = getAccuracy(
-    pageMeta.countOfErrors,
-    pageMeta.totalKeypresses,
-  );
-  const leastAccurateKeys = getLeastAccurateKeys(
-    pageMeta.correctlyPressedKeys,
-    pageMeta.incorrectlyPressedKeys,
-  );
-
+function Stats({ typePane }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div>
         <p>
-          <b>Accuracy:</b> <span>{accuracy}</span>
+          <b>Accuracy:</b> <span>{typePane.accuracy}</span>
         </p>
         <p>
-          <b>Raw WPM:</b> <span>{wpm}</span>
+          <b>Raw WPM:</b> <span>{typePane.wpm}</span>
         </p>
         <p>
-          <b>Adjusted WPM:</b> <span>{adjustedWPM}</span>
+          <b>Adjusted WPM:</b> <span>{typePane.adjustedWPM}</span>
         </p>
       </div>
-      {leastAccurateKeys.length !== 0 ? (
+      {typePane.leastAccurateKeys.length !== 0 ? (
         <div>
           <h2 className="font-bold">Least accurate keys</h2>
           <ol className="list-inside list-decimal">
-            {leastAccurateKeys.map((key) => (
+            {typePane.leastAccurateKeys.map((key) => (
               <li key={key.key}>
                 <span className="inline-block w-[9.6px] text-center">
                   {key.key === " " ? "␣" : key.key}
@@ -66,3 +38,5 @@ export function Stats() {
     </div>
   );
 }
+
+export default observer(Stats);

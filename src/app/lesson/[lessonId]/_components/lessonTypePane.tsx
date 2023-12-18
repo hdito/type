@@ -1,25 +1,23 @@
-import { useLessonContext } from "./lessonProvider";
-import { Line } from "./line";
+import { observer } from "mobx-react-lite";
+import Line from "./line";
+import { TypePaneStore } from "@/stores/TypePaneStore";
 
-export default function LessonTypePane() {
-  const { lesson, lessonState } = useLessonContext();
+type Props = {
+  typePane: TypePaneStore;
+};
 
-  const pageMeta = lessonState.pagesMeta[lessonState.currentPage]!;
-  const pageContent = lesson.pages[lessonState.currentPage];
-
-  const targetStrings = pageContent.text!.split("\n");
-
+function LessonTypePane({ typePane }: Props) {
   return (
     <div>
-      {targetStrings.map((targetString, index) => (
+      {typePane.lines.map((line, index) => (
         <Line
-          isEditable={pageMeta.currentLine === index}
-          targetString={targetString}
+          isEditable={typePane.currentLineIndex === index}
           key={index}
-          userInput={pageMeta.userInputs[index]}
-          userErrors={pageMeta.userErrors[index]}
+          line={line}
         />
       ))}
     </div>
   );
 }
+
+export default observer(LessonTypePane);
