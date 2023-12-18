@@ -69,12 +69,15 @@ export default function Lessons({ lessonNames }: LessonsType) {
       {lessonNames.map((name, index) => (
         <li key={name}>
           <Link
+            onMouseEnter={() => setSelectedLink(index)}
             ref={(link) => {
               if (!link) return;
               lessonsRef.current[index] = link;
             }}
             href={`lesson/${name}`}
-            className="block focus-within:outline-none hover:bg-black hover:text-white focus:bg-black focus:text-white"
+            className={`block focus-within:outline-none ${
+              selectedLink === index ? "bg-black text-white" : ""
+            }`}
           >
             {name}
           </Link>
